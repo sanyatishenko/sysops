@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Create EC2
+
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: "EC2 Configuration"
+        Parameters: 
+          - InstanceName
+          - InstanceOSParameter
+          - InstanceTypeParameter
+          - InstanceKeyParameter
+      - 
+        Label: 
+          default: "Network Configuration"
+        Parameters: 
+          - InstanceSubnetParameter
+          - InstanceSGParameter
+    ParameterLabels: 
+      InstanceTypeParameter: 
+        default: "EC2 size:"
+      InstanceName: 
+        default: "EC2 name:"
+      InstanceOSParameter: 
+        default: "EC2 OS"
+      InstanceKeyParameter:
+        default: "KeyPair"
+      InstanceSubnetParameter:
+        default: "Select subnet:"
+      InstanceSGParameter:
+        default: "Seslect security group"
+
+Parameters:
+  InstanceTypeParameter:
+    Type: String
+    Default: t4g.micro
+    AllowedValues:
+      - t4g.micro
+      - t4g.small
+      - t4g.medium
+    Description: "Enter t4g.micro, t4g.small, or t4g.medium. Default is t4g.micro."
+
+  InstanceOSParameter:
+    Type: String
+    Default: AmazonLinux
+    AllowedValues:
+      - AmazonLinux
+      - Ubuntu
+    Description: "Enter OS: AmazonLinux, Ubuntu. Default is AmazonLinux."
+
+  InstanceSubnetParameter:
+    Type: "AWS::EC2::Subnet::Id"
+    Description: "Select SubnetID."
+
+  InstanceSGParameter:
+    Type: "AWS::EC2::SecurityGroup::Id"
+    Description: "Select SecurityGroupID."
+  
+  InstanceKeyParameter:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: "Select Key pair."
+
+  InstanceName:
+    Type: String
+    Description: "Instance name."
+
+
+Mappings: 
+  RegionMap: 
+    eu-north-1:
+      AmazonLinux: ami-07a8e494b3311a511
+      Ubuntu: ami-0d7beeabef1d43e86
+    eu-central-1:
+      AmazonLinux: ami-014c0f5224a495a18
+      Ubuntu: ami-0641bed8c0ce71686
+ 
+Resources: 
+  myEC2Instance: 
+    Type: "AWS::EC2::Instance"
+    Properties: 
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", Ref: InstanceOSParameter]
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp3
+            Iops: 3000
+            Encrypted: true
+      SubnetId: !Ref InstanceSubnetParameter
+      InstanceType: !Ref InstanceTypeParameter
+      SecurityGroupIds: 
+        - !Ref InstanceSGParameter
+      KeyName: !Ref InstanceKeyParameter
+      Tags:
+       - Key: "Name"
+         Value: !Ref InstanceName
+
+Outputs:
+  InstanceID:
+    Description: The Instance ID
+    Value: !Ref myEC2Instance
